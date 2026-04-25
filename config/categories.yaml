@@ -1,0 +1,56 @@
+categories:
+  model_release:
+    label: "Model Release"
+    description: "New AI model launches, version updates, open-source model releases"
+    keywords: ["release", "launch", "model", "GPT", "Claude", "Gemini", "Llama", "Mistral", "open-source"]
+    color: "#6366f1"
+    icon: "🤖"
+
+  eval_technique:
+    label: "Eval & Benchmarks"
+    description: "New evaluation methods, benchmarks, leaderboards, test suites"
+    keywords: ["benchmark", "evaluation", "eval", "MMLU", "HumanEval", "leaderboard", "test"]
+    color: "#f59e0b"
+    icon: "📊"
+
+  research_breakthrough:
+    label: "Research Breakthrough"
+    description: "Novel architectures, training methods, theoretical advances from papers"
+    keywords: ["paper", "research", "novel", "architecture", "transformer", "attention", "scaling"]
+    color: "#10b981"
+    icon: "🔬"
+
+  tool_framework:
+    label: "Tools & Frameworks"
+    description: "New developer tools, libraries, APIs, frameworks for AI development"
+    keywords: ["tool", "library", "framework", "API", "SDK", "LangChain", "plugin", "integration"]
+    color: "#3b82f6"
+    icon: "🛠️"
+
+  industry_news:
+    label: "Industry News"
+    description: "Business deals, funding rounds, acquisitions, partnerships, company news"
+    keywords: ["funding", "acquisition", "partnership", "investment", "billion", "startup", "company"]
+    color: "#8b5cf6"
+    icon: "💼"
+
+  policy_safety:
+    label: "Policy & Safety"
+    description: "AI governance, regulation, safety research, alignment, ethics"
+    keywords: ["safety", "alignment", "governance", "regulation", "policy", "ethics", "bias", "EU AI Act"]
+    color: "#ef4444"
+    icon: "🛡️"
+
+  tutorial_guide:
+    label: "Tutorial & Guide"
+    description: "How-to content, practical tutorials, best practices, walkthroughs"
+    keywords: ["tutorial", "guide", "how to", "walkthrough", "step by step", "learn", "implement"]
+    color: "#14b8a6"
+    icon: "📚"
+
+  other:
+    label: "Other"
+    description: "Miscellaneous AI news that doesn't fit other categories"
+    keywords: []
+    color: "#6b7280"
+    icon: "📰"

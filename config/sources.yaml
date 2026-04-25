@@ -1,0 +1,119 @@
+websites:
+  - name: "Anthropic Blog"
+    url: "https://www.anthropic.com/news"
+    type: website
+    active: true
+    scrape_depth: 1
+
+  - name: "OpenAI Blog"
+    url: "https://openai.com/news"
+    type: website
+    active: true
+    scrape_depth: 1
+
+  - name: "Hugging Face Blog"
+    url: "https://huggingface.co/blog"
+    type: website
+    active: true
+    scrape_depth: 1
+
+  - name: "Google DeepMind Blog"
+    url: "https://deepmind.google/discover/blog/"
+    type: website
+    active: false
+    scrape_depth: 1
+
+  - name: "MIT Technology Review AI"
+    url: "https://www.technologyreview.com/topic/artificial-intelligence/"
+    type: website
+    active: false
+    scrape_depth: 1
+
+  - name: "VentureBeat AI"
+    url: "https://venturebeat.com/category/ai/"
+    type: website
+    active: false
+    scrape_depth: 1
+
+  - name: "The Batch (DeepLearning.AI)"
+    url: "https://www.deeplearning.ai/the-batch/"
+    type: website
+    active: false
+    scrape_depth: 1
+
+  - name: "Towards Data Science"
+    url: "https://towardsdatascience.com/tagged/artificial-intelligence"
+    type: website
+    active: false
+    scrape_depth: 1
+
+youtube:
+  - name: "Andrej Karpathy"
+    channel_id: "UCXUPKJO5MZQM50t_A7ldWIQ"
+    type: youtube
+    active: false
+    max_videos_per_run: 1
+
+  - name: "Two Minute Papers"
+    channel_id: "UCbfYPyITQ-7l4upoX8nvctg"
+    type: youtube
+    active: true
+    max_videos_per_run: 2
+
+  - name: "Yannic Kilcher"
+    channel_id: "UCZHmQk67mSJgfCCTn7xBfew"
+    type: youtube
+    active: false
+    max_videos_per_run: 1
+
+  - name: "AI Explained"
+    channel_id: "UCNJ1Ymd5yFuUPtn21xtRbbw"
+    type: youtube
+    active: true
+    max_videos_per_run: 2
+
+  - name: "Lex Fridman"
+    channel_id: "UCSHZKyawb77ixDdsGog4iWA"
+    type: youtube
+    active: false
+    max_videos_per_run: 1
+
+newsletters:
+  - name: "TLDR AI"
+    rss_url: "https://tldr.tech/ai/rss"
+    type: newsletter
+    active: false
+
+  - name: "Ben's Bites"
+    rss_url: "https://bensbites.beehiiv.com/feed"
+    type: newsletter
+    active: false
+
+  - name: "The Rundown AI"
+    rss_url: "https://www.therundown.ai/rss"
+    type: newsletter
+    active: false
+
+  - name: "Ahead of AI"
+    rss_url: "https://magazine.sebastianraschka.com/feed"
+    type: newsletter
+    active: true
+
+arxiv:
+  - name: "ArXiv cs.AI"
+    categories: ["cs.AI"]
+    type: arxiv
+    active: true
+    max_papers_per_run: 3
+
+  - name: "ArXiv cs.LG"
+    categories: ["cs.LG"]
+    type: arxiv
+    active: true
+    max_papers_per_run: 3
+
+  - name: "ArXiv cs.CL"
+    categories: ["cs.CL"]
+    type: arxiv
+    active: true
+    max_papers_per_run: 3
