@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, Any, Optional
 import uuid
 from datetime import datetime, timedelta
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.team.pm_agent import run_pm_agent
@@ -43,10 +43,15 @@ async def retrieval_node(state: NewsletterState) -> NewsletterState:
     lookback = timedelta(days=state.get("lookback_days", 7))
     since = datetime.utcnow() - lookback
 
-    # Get recent articles with cluster info
+    # Get recent articles — prefer published_at, fall back to created_at for sources without dates
     result = await db.execute(
         select(Article)
-        .where(Article.created_at >= since)
+        .where(
+            or_(
+                Article.published_at >= since,
+                and_(Article.published_at == None, Article.created_at >= since),
+            )
+        )
         .order_by(desc(Article.importance_score))
         .limit(settings.cluster_max_articles_per_run)
     )

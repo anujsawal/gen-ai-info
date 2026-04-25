@@ -69,6 +69,23 @@ async def scraper_node(state: IngestionState) -> IngestionState:
         if source.get("active"):
             tasks.append(scrape_arxiv_source(source))
 
+    # Also run any active sources added via the UI (not in YAML)
+    db: AsyncSession = state["db_session"]
+    yaml_names = {s["name"] for group in config.values() for s in group if isinstance(s, dict)}
+    db_sources = (await db.execute(sa_select(Source).where(Source.active == True))).scalars().all()
+    for src in db_sources:
+        if src.name in yaml_names:
+            continue
+        cfg = src.fetch_config or {}
+        if src.type == SourceType.website and src.url:
+            tasks.append(scrape_website_source({"name": src.name, "url": src.url, "scrape_depth": cfg.get("scrape_depth", 1)}))
+        elif src.type == SourceType.youtube:
+            tasks.append(scrape_youtube_source({"name": src.name, **cfg}))
+        elif src.type == SourceType.newsletter:
+            tasks.append(scrape_newsletter_source({"name": src.name, "rss_url": src.url or cfg.get("rss_url"), **cfg}))
+        elif src.type == SourceType.arxiv:
+            tasks.append(scrape_arxiv_source({"name": src.name, **cfg}))
+
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     raw_items = []

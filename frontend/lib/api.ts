@@ -36,6 +36,9 @@ export const api = {
   listSources: () => apiFetch("/api/sources"),
   toggleSource: (id: string) => apiFetch(`/api/sources/${id}/toggle`, { method: "PATCH" }),
   deleteSource: (id: string) => apiFetch(`/api/sources/${id}`, { method: "DELETE" }),
+  detectSource: (url: string) => apiFetch("/api/sources/detect", { method: "POST", body: JSON.stringify({ url }) }),
+  createSource: (data: { name: string; url?: string; type: string; active: boolean; fetch_config: Record<string, unknown> }) =>
+    apiFetch("/api/sources", { method: "POST", body: JSON.stringify(data) }),
 
   // Governance
   getAuditLog: (actor?: string) =>
