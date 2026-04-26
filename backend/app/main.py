@@ -59,7 +59,24 @@ app.include_router(webhook.router, prefix="/api")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "1.0.0"}
+    s = get_settings()
+    gemini_status = "not_configured"
+    if s.gemini_api_key:
+        try:
+            import httpx
+            r = httpx.get(
+                f"https://generativelanguage.googleapis.com/v1beta/models?key={s.gemini_api_key}",
+                timeout=5,
+            )
+            gemini_status = "ok" if r.status_code == 200 else f"error_{r.status_code}"
+        except Exception as e:
+            gemini_status = f"error: {str(e)[:60]}"
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "groq_configured": bool(s.groq_api_key),
+        "gemini": gemini_status,
+    }
 
 
 @app.get("/api/pipeline/status")
