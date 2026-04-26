@@ -20,7 +20,7 @@ websites:
   - name: "Google DeepMind Blog"
     url: "https://deepmind.google/discover/blog/"
     type: website
-    active: false
+    active: true
     scrape_depth: 1
 
   - name: "MIT Technology Review AI"
@@ -32,7 +32,7 @@ websites:
   - name: "VentureBeat AI"
     url: "https://venturebeat.com/category/ai/"
     type: website
-    active: false
+    active: true
     scrape_depth: 1
 
   - name: "The Batch (DeepLearning.AI)"
@@ -82,12 +82,12 @@ newsletters:
   - name: "TLDR AI"
     rss_url: "https://tldr.tech/ai/rss"
     type: newsletter
-    active: false
+    active: true
 
   - name: "Ben's Bites"
     rss_url: "https://bensbites.beehiiv.com/feed"
     type: newsletter
-    active: false
+    active: true
 
   - name: "The Rundown AI"
     rss_url: "https://www.therundown.ai/rss"
