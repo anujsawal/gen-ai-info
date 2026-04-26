@@ -107,35 +107,41 @@ class FeedbackCuratorAgent:
             logger.info("feedback_low_rating_no_comment", newsletter_id=newsletter_id, rating=rating)
             return {"status": "routed", "routed_to": routed_to}
 
-        # Embed the comment
-        embedding = embed_query(comment)
+        # Embed the comment for deduplication — skip silently if the model isn't loaded yet
+        # (avoids OOM-killing the container on Railway when the model hasn't been warmed up)
+        embedding = None
+        try:
+            embedding = embed_query(comment)
+        except Exception as emb_err:
+            logger.warning("feedback_embed_skipped", error=str(emb_err)[:80])
 
-        # Deduplication: check cosine similarity against existing embeddings
-        rows = await db.execute(
-            select(NewsletterFeedback.embedding)
-            .where(
-                NewsletterFeedback.embedding.is_not(None),
-                NewsletterFeedback.status.in_(["routed", "applied"]),
-            )
-        )
-        existing_embeddings = [r[0] for r in rows.fetchall()]
-
-        for existing_emb in existing_embeddings:
-            sim = _cosine(embedding, existing_emb)
-            if sim > _DEDUP_THRESHOLD:
-                fb = NewsletterFeedback(
-                    id=entry_id,
-                    newsletter_id=newsletter_id,
-                    rating=rating,
-                    comment=comment,
-                    embedding=embedding,
-                    status="duplicate",
-                    routed_to=None,
+        # Deduplication: only run if we have an embedding
+        if embedding is not None:
+            rows = await db.execute(
+                select(NewsletterFeedback.embedding)
+                .where(
+                    NewsletterFeedback.embedding.is_not(None),
+                    NewsletterFeedback.status.in_(["routed", "applied"]),
                 )
-                db.add(fb)
-                await db.commit()
-                logger.info("feedback_duplicate", newsletter_id=newsletter_id, similarity=round(sim, 3))
-                return {"status": "duplicate", "message": "Similar feedback already recorded"}
+            )
+            existing_embeddings = [r[0] for r in rows.fetchall()]
+
+            for existing_emb in existing_embeddings:
+                sim = _cosine(embedding, existing_emb)
+                if sim > _DEDUP_THRESHOLD:
+                    fb = NewsletterFeedback(
+                        id=entry_id,
+                        newsletter_id=newsletter_id,
+                        rating=rating,
+                        comment=comment,
+                        embedding=embedding,
+                        status="duplicate",
+                        routed_to=None,
+                    )
+                    db.add(fb)
+                    await db.commit()
+                    logger.info("feedback_duplicate", newsletter_id=newsletter_id, similarity=round(sim, 3))
+                    return {"status": "duplicate", "message": "Similar feedback already recorded"}
 
         # Route to the appropriate agent(s)
         routed_to = _route_comment(comment)

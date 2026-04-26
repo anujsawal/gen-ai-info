@@ -1,11 +1,5 @@
 websites:
   # JS-rendered sites — httpx gets empty shells, disabled until a proper scraper is added
-  - name: "Anthropic Blog"
-    url: "https://www.anthropic.com/news"
-    type: website
-    active: false
-    scrape_depth: 1
-
   - name: "OpenAI Blog"
     url: "https://openai.com/news"
     type: website
@@ -86,11 +80,6 @@ newsletters:
   # Direct RSS feeds from major labs (confirmed working)
   - name: "Hugging Face Blog"
     rss_url: "https://huggingface.co/blog/feed.xml"
-    type: newsletter
-    active: true
-
-  - name: "Google DeepMind Blog"
-    rss_url: "https://deepmind.google/blog/rss.xml"
     type: newsletter
     active: true
 

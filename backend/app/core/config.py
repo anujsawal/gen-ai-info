@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # Gemini (fallback when Groq hits rate limit)
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-2.0-flash"
 
     # Embeddings (local sentence-transformers)
     embedding_model: str = "nomic-ai/nomic-embed-text-v1"
