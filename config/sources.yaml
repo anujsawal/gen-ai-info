@@ -1,38 +1,21 @@
 websites:
+  # JS-rendered sites — httpx gets empty shells, disabled until a proper scraper is added
   - name: "Anthropic Blog"
     url: "https://www.anthropic.com/news"
     type: website
-    active: true
+    active: false
     scrape_depth: 1
 
   - name: "OpenAI Blog"
     url: "https://openai.com/news"
     type: website
-    active: true
-    scrape_depth: 1
-
-  - name: "Hugging Face Blog"
-    url: "https://huggingface.co/blog"
-    type: website
-    active: true
-    scrape_depth: 1
-
-  - name: "Google DeepMind Blog"
-    url: "https://deepmind.google/discover/blog/"
-    type: website
-    active: true
+    active: false
     scrape_depth: 1
 
   - name: "MIT Technology Review AI"
     url: "https://www.technologyreview.com/topic/artificial-intelligence/"
     type: website
     active: false
-    scrape_depth: 1
-
-  - name: "VentureBeat AI"
-    url: "https://venturebeat.com/category/ai/"
-    type: website
-    active: true
     scrape_depth: 1
 
   - name: "The Batch (DeepLearning.AI)"
@@ -79,6 +62,7 @@ youtube:
     max_videos_per_run: 1
 
 newsletters:
+  # Aggregators (cover Anthropic/OpenAI/Google news with editorial curation already applied)
   - name: "TLDR AI"
     rss_url: "https://tldr.tech/ai/rss"
     type: newsletter
@@ -92,10 +76,31 @@ newsletters:
   - name: "The Rundown AI"
     rss_url: "https://www.therundown.ai/rss"
     type: newsletter
-    active: false
+    active: true
 
   - name: "Ahead of AI"
     rss_url: "https://magazine.sebastianraschka.com/feed"
+    type: newsletter
+    active: true
+
+  # Direct RSS feeds from major labs (confirmed working)
+  - name: "Hugging Face Blog"
+    rss_url: "https://huggingface.co/blog/feed.xml"
+    type: newsletter
+    active: true
+
+  - name: "Google DeepMind Blog"
+    rss_url: "https://deepmind.google/blog/rss.xml"
+    type: newsletter
+    active: true
+
+  - name: "VentureBeat AI"
+    rss_url: "https://venturebeat.com/category/ai/feed/"
+    type: newsletter
+    active: true
+
+  - name: "Lenny's Newsletter"
+    rss_url: "https://www.lennysnewsletter.com/feed"
     type: newsletter
     active: true
 
