@@ -6,6 +6,7 @@ python-multipart==0.0.12
 # LangChain / LangGraph / LangSmith
 langchain==0.3.12
 langchain-groq==0.2.3
+langchain-google-genai==2.0.7
 langgraph==0.2.56
 langsmith==0.2.3
 langchain-community==0.3.12

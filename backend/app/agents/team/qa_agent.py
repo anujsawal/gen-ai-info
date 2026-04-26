@@ -3,30 +3,18 @@ QA Agent — Quality control and hallucination checker.
 Validates newsletter content against source articles,
 scores faithfulness, runs LangSmith evals, decides approve/reject.
 """
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
 from langsmith import Client as LangSmithClient
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.llm import ainvoke_with_fallback
 import json
 import time
 
 logger = get_logger(__name__)
 settings = get_settings()
 
-_llm = None
 _ls_client = None
-
-
-def _get_llm() -> ChatGroq:
-    global _llm
-    if _llm is None:
-        _llm = ChatGroq(
-            api_key=settings.groq_api_key,
-            model=settings.llm_large,
-            temperature=0.1,  # low temp for evaluation accuracy
-        )
-    return _llm
 
 
 def _get_ls_client():
@@ -101,7 +89,6 @@ async def run_qa_agent(
     user_feedback: curated accuracy/fact-check feedback from previous newsletter editions
     Returns: QA report dict
     """
-    llm = _get_llm()
     threshold = faithfulness_threshold or settings.faithfulness_threshold
 
     # Trim source texts to fit context window
@@ -130,8 +117,7 @@ async def run_qa_agent(
 
     start = time.time()
     try:
-        response = await llm.ainvoke(messages)
-        raw = response.content.strip()
+        raw = (await ainvoke_with_fallback(messages, temperature=0.1)).strip()
         if "```json" in raw:
             raw = raw.split("```json")[1].split("```")[0].strip()
         elif "```" in raw:

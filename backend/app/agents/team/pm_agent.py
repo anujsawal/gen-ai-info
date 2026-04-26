@@ -3,29 +3,14 @@ PM Agent — Editorial prioritization.
 Decides which clustered articles to include, ranks by importance,
 and produces a structured newsletter agenda with full reasoning logged.
 """
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.output_parsers import JsonOutputParser
-from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.llm import ainvoke_with_fallback
 import json
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-_llm = None
-
-
-def _get_llm() -> ChatGroq:
-    global _llm
-    if _llm is None:
-        _llm = ChatGroq(
-            api_key=settings.groq_api_key,
-            model=settings.llm_large,
-            temperature=0.3,
-        )
-    return _llm
 
 
 SYSTEM_PROMPT = """You are the AI Curator / Editor-in-Chief of a Gen AI weekly digest newsletter.
@@ -90,7 +75,6 @@ async def run_pm_agent(clusters: list[dict], user_feedback: list[str] | None = N
     user_feedback: curated editorial feedback from previous newsletter editions
     Returns: agenda dict with top_stories, deep_dive, quick_bites, rejected
     """
-    llm = _get_llm()
     cluster_text = json.dumps(clusters, indent=2, default=str)
 
     feedback_section = ""
@@ -106,8 +90,7 @@ async def run_pm_agent(clusters: list[dict], user_feedback: list[str] | None = N
     ]
 
     try:
-        response = await llm.ainvoke(messages)
-        raw = response.content.strip()
+        raw = (await ainvoke_with_fallback(messages, temperature=0.3)).strip()
         # Extract JSON if wrapped in markdown code block
         if "```json" in raw:
             raw = raw.split("```json")[1].split("```")[0].strip()

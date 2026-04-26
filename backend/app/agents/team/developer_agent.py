@@ -3,27 +3,14 @@ Developer Agent — Content writer.
 Takes the Designer blueprint and writes all newsletter content:
 headlines, 3-bullet summaries, deep-dive prose, transitions.
 """
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.llm import ainvoke_with_fallback
 import json
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-_llm = None
-
-
-def _get_llm() -> ChatGroq:
-    global _llm
-    if _llm is None:
-        _llm = ChatGroq(
-            api_key=settings.groq_api_key,
-            model=settings.llm_large,
-            temperature=0.4,
-        )
-    return _llm
 
 
 SYSTEM_PROMPT = """You are the Content Writer / Developer for a Gen AI newsletter.
@@ -74,8 +61,6 @@ async def run_developer_agent(
     user_feedback: curated writing/style feedback from previous newsletter editions
     Returns: newsletter content dict
     """
-    llm = _get_llm()
-
     feedback_text = ""
     if qa_feedback:
         feedback_text = f"\n\nQA FEEDBACK TO FIX:\n" + "\n".join(f"- {f}" for f in qa_feedback)
@@ -98,8 +83,7 @@ async def run_developer_agent(
     ]
 
     try:
-        response = await llm.ainvoke(messages)
-        raw = response.content.strip()
+        raw = (await ainvoke_with_fallback(messages, temperature=0.4)).strip()
         if "```json" in raw:
             raw = raw.split("```json")[1].split("```")[0].strip()
         elif "```" in raw:

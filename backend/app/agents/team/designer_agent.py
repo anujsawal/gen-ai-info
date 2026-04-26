@@ -3,27 +3,14 @@ Designer Agent — Newsletter architecture.
 Takes the PM agenda and designs the section layout,
 tone, visual hierarchy, and formatting for each article.
 """
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.llm import ainvoke_with_fallback
 import json
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-_llm = None
-
-
-def _get_llm() -> ChatGroq:
-    global _llm
-    if _llm is None:
-        _llm = ChatGroq(
-            api_key=settings.groq_api_key,
-            model=settings.llm_fast,
-            temperature=0.2,
-        )
-    return _llm
 
 
 SYSTEM_PROMPT = """You are the Designer/Art Director of a Gen AI weekly digest newsletter.
@@ -63,8 +50,6 @@ async def run_designer_agent(agenda: dict, clusters: list[dict]) -> dict:
     clusters: full cluster metadata for context
     Returns: blueprint dict with sections and layout
     """
-    llm = _get_llm()
-
     context = {
         "agenda": agenda,
         "available_clusters": [{"id": c["cluster_id"], "title": c.get("representative_title"),
@@ -77,8 +62,7 @@ async def run_designer_agent(agenda: dict, clusters: list[dict]) -> dict:
     ]
 
     try:
-        response = await llm.ainvoke(messages)
-        raw = response.content.strip()
+        raw = (await ainvoke_with_fallback(messages, temperature=0.2, model=settings.llm_fast)).strip()
         if "```json" in raw:
             raw = raw.split("```json")[1].split("```")[0].strip()
         elif "```" in raw:

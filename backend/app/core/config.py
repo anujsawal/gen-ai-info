@@ -20,10 +20,14 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://genai:genai_pass@localhost:5432/genai_info"
 
-    # Groq LLM
+    # Groq LLM (primary)
     groq_api_key: str = ""
     llm_large: str = "llama-3.3-70b-versatile"
     llm_fast: str = "llama-3.1-8b-instant"
+
+    # Gemini (fallback when Groq hits rate limit)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-1.5-flash"
 
     # Embeddings (local sentence-transformers)
     embedding_model: str = "nomic-ai/nomic-embed-text-v1"
