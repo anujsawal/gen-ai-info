@@ -150,6 +150,21 @@ class Newsletter(Base):
     eval_metrics = relationship("EvalMetric", back_populates="newsletter")
 
 
+class NewsletterFeedback(Base):
+    __tablename__ = "newsletter_feedback"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    newsletter_id = Column(UUID(as_uuid=False), ForeignKey("newsletters.id"), nullable=False, index=True)
+    rating = Column(Integer, nullable=False)           # 1–5
+    comment = Column(Text, nullable=True)
+    embedding = Column(Vector(768), nullable=True)     # cosine dedup
+    status = Column(String(50), nullable=False, default="pending")
+    # status: pending | routed | duplicate | applied
+    routed_to = Column(JSON, nullable=True)
+    # shape: {"pm": [".."], "qa": [".."], "developer": [".."]}
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class AuditLog(Base):
     """Governance audit trail — every agent action logged here."""
     __tablename__ = "audit_log"

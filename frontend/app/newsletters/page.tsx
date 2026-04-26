@@ -4,8 +4,9 @@ import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function NewslettersPage() {
   const { data: newsletters, isLoading } = useQuery({ queryKey: ["newsletters"], queryFn: api.listNewsletters });
@@ -20,6 +21,27 @@ export default function NewslettersPage() {
     mutationFn: (id: string) => api.sendNewsletter(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["newsletters"] }),
   });
+
+  const [feedbackRating, setFeedbackRating] = useState<1 | 5 | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const feedbackMutation = useMutation({
+    mutationFn: () =>
+      api.submitFeedback(selectedId!, {
+        rating: feedbackRating!,
+        comment: feedbackComment.trim() || undefined,
+      }),
+    onSuccess: () => {
+      setFeedbackRating(null);
+      setFeedbackComment("");
+    },
+  });
+
+  useEffect(() => {
+    setFeedbackRating(null);
+    setFeedbackComment("");
+    feedbackMutation.reset();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   return (
     <div className="space-y-6">
@@ -112,6 +134,43 @@ export default function NewslettersPage() {
                   ))}
                 </div>
               ))}
+
+              <div className="border-t pt-4 mt-2">
+                <p className="text-xs font-semibold mb-2 text-muted-foreground">Rate this edition</p>
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    size="sm"
+                    variant={feedbackRating === 5 ? "default" : "outline"}
+                    className="text-xs h-7 px-3"
+                    onClick={() => setFeedbackRating(5)}
+                  >
+                    👍 Good
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={feedbackRating === 1 ? "destructive" : "outline"}
+                    className="text-xs h-7 px-3"
+                    onClick={() => setFeedbackRating(1)}
+                  >
+                    👎 Needs work
+                  </Button>
+                </div>
+                <Textarea
+                  placeholder="What should we change? (optional)"
+                  value={feedbackComment}
+                  onChange={e => setFeedbackComment(e.target.value)}
+                  className="text-xs resize-none mb-2"
+                  rows={2}
+                />
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={!feedbackRating || feedbackMutation.isPending}
+                  onClick={() => feedbackMutation.mutate()}
+                >
+                  {feedbackMutation.isSuccess ? "Submitted ✓" : feedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

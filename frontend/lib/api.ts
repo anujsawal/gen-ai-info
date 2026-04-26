@@ -25,6 +25,8 @@ export const api = {
     apiFetch(`/api/newsletter/generate-and-send?lookback_days=${lookbackDays}`, { method: "POST" }),
   sendNewsletter: (id: string) =>
     apiFetch(`/api/newsletter/send/${id}`, { method: "POST" }),
+  submitFeedback: (newsletterId: string, data: { rating: number; comment?: string }) =>
+    apiFetch(`/api/newsletter/${newsletterId}/feedback`, { method: "POST", body: JSON.stringify(data) }),
   listNewsletters: () => apiFetch("/api/newsletter/list"),
   getNewsletter: (id: string) => apiFetch(`/api/newsletter/${id}`),
 

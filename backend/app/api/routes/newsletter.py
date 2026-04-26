@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from app.db.session import get_db
@@ -7,6 +8,7 @@ from app.db.models import Newsletter
 from app.graph.newsletter_graph import newsletter_graph
 from app.services.pdf_service import generate_pdf
 from app.services.whatsapp_service import send_pdf_to_whatsapp
+from app.agents.feedback.feedback_agent import FeedbackCuratorAgent
 from app.core.logging import get_logger
 import os
 
@@ -22,6 +24,7 @@ async def generate_newsletter(lookback_days: int = 7, db: AsyncSession = Depends
             "db_session": db,
             "lookback_days": lookback_days,
             "clusters": [], "cluster_articles": {},
+            "curated_feedback": {},
             "pm_agenda": {}, "designer_blueprint": {},
             "newsletter_content": {}, "qa_report": {},
             "qa_retries": 0, "newsletter_id": "", "errors": [],
@@ -98,6 +101,26 @@ async def list_newsletters(limit: int = 20, db: AsyncSession = Depends(get_db)):
         }
         for nl in newsletters
     ]
+
+
+class FeedbackRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    comment: str | None = None
+
+
+@router.post("/{newsletter_id}/feedback")
+async def submit_newsletter_feedback(
+    newsletter_id: str,
+    body: FeedbackRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Submit a rating and optional comment for a newsletter edition."""
+    result = await db.execute(select(Newsletter).where(Newsletter.id == newsletter_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(404, "Newsletter not found")
+    agent = FeedbackCuratorAgent()
+    outcome = await agent.process_feedback(db, newsletter_id, body.rating, body.comment)
+    return outcome
 
 
 @router.get("/{newsletter_id}")

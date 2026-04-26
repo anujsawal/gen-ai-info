@@ -83,18 +83,26 @@ HARD RULES — these override all other criteria. Violations MUST go to rejected
 """
 
 
-async def run_pm_agent(clusters: list[dict]) -> dict:
+async def run_pm_agent(clusters: list[dict], user_feedback: list[str] | None = None) -> dict:
     """
     clusters: list of {cluster_id, representative_title, representative_summary,
                        category, cluster_size, article_ids}
+    user_feedback: curated editorial feedback from previous newsletter editions
     Returns: agenda dict with top_stories, deep_dive, quick_bites, rejected
     """
     llm = _get_llm()
     cluster_text = json.dumps(clusters, indent=2, default=str)
 
+    feedback_section = ""
+    if user_feedback:
+        feedback_section = (
+            "\n\n### EDITORIAL FEEDBACK FROM PREVIOUS EDITIONS:\n"
+            + "\n".join(f"- {f}" for f in user_feedback)
+        )
+
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Here are this week's article clusters:\n\n{cluster_text}\n\nProduce the editorial agenda JSON.")
+        HumanMessage(content=f"Here are this week's article clusters:\n\n{cluster_text}{feedback_section}\n\nProduce the editorial agenda JSON.")
     ]
 
     try:

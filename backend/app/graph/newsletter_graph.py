@@ -7,14 +7,14 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, Any, Optional
 import uuid
 from datetime import datetime, timedelta
-from sqlalchemy import select, desc, or_, and_
+from sqlalchemy import select, desc, or_, and_, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.team.pm_agent import run_pm_agent
 from app.agents.team.designer_agent import run_designer_agent
 from app.agents.team.developer_agent import run_developer_agent
 from app.agents.team.qa_agent import run_qa_agent
-from app.db.models import Article, Cluster, Newsletter, NewsletterStatus, AuditLog
+from app.db.models import Article, Cluster, Newsletter, NewsletterStatus, AuditLog, NewsletterFeedback
 from app.agents.processing.embedder import embed_query
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -28,6 +28,7 @@ class NewsletterState(TypedDict):
     lookback_days: int
     clusters: list[dict]            # enriched cluster data with articles
     cluster_articles: dict          # {cluster_id: article_data}
+    curated_feedback: dict          # {"pm": [...], "qa": [...], "developer": [...]}
     pm_agenda: dict
     designer_blueprint: dict
     newsletter_content: dict
@@ -87,9 +88,23 @@ async def retrieval_node(state: NewsletterState) -> NewsletterState:
     return {**state, "clusters": clusters, "cluster_articles": cluster_articles}
 
 
+async def feedback_node(state: NewsletterState) -> NewsletterState:
+    """Load curated user feedback and inject it into subsequent agent prompts."""
+    from app.agents.feedback.feedback_agent import FeedbackCuratorAgent
+    agent = FeedbackCuratorAgent()
+    curated = await agent.get_curated_context(state["db_session"])
+    if curated:
+        logger.info("feedback_loaded", agents=list(curated.keys()),
+                    total=sum(len(v) for v in curated.values()))
+    return {**state, "curated_feedback": curated}
+
+
 async def pm_node(state: NewsletterState) -> NewsletterState:
     """Run PM Agent to prioritize and set editorial agenda."""
-    agenda = await run_pm_agent(state["clusters"])
+    agenda = await run_pm_agent(
+        state["clusters"],
+        user_feedback=state.get("curated_feedback", {}).get("pm"),
+    )
 
     # Log to audit
     db: AsyncSession = state["db_session"]
@@ -138,6 +153,7 @@ async def developer_node(state: NewsletterState) -> NewsletterState:
         state["designer_blueprint"],
         state["cluster_articles"],
         qa_feedback=qa_feedback,
+        user_feedback=state.get("curated_feedback", {}).get("developer"),
     )
     return {**state, "newsletter_content": content}
 
@@ -147,6 +163,7 @@ async def qa_node(state: NewsletterState) -> NewsletterState:
     qa_report = await run_qa_agent(
         state["newsletter_content"],
         state["cluster_articles"],
+        user_feedback=state.get("curated_feedback", {}).get("qa"),
     )
     retries = state.get("qa_retries", 0)
     return {**state, "qa_report": qa_report, "qa_retries": retries}
@@ -178,6 +195,14 @@ async def save_newsletter_node(state: NewsletterState) -> NewsletterState:
         },
     )
     db.add(newsletter)
+    await db.flush()
+
+    # Mark all pending user feedback as applied now that it has been injected
+    await db.execute(
+        sa_update(NewsletterFeedback)
+        .where(NewsletterFeedback.status == "routed")
+        .values(status="applied")
+    )
     await db.commit()
 
     logger.info("newsletter_saved", id=newsletter_id)
@@ -202,6 +227,7 @@ def build_newsletter_graph() -> StateGraph:
     g = StateGraph(NewsletterState)
 
     g.add_node("retrieval", retrieval_node)
+    g.add_node("feedback", feedback_node)
     g.add_node("pm", pm_node)
     g.add_node("designer", designer_node)
     g.add_node("developer", developer_node)
@@ -209,7 +235,8 @@ def build_newsletter_graph() -> StateGraph:
     g.add_node("save", save_newsletter_node)
 
     g.set_entry_point("retrieval")
-    g.add_edge("retrieval", "pm")
+    g.add_edge("retrieval", "feedback")
+    g.add_edge("feedback", "pm")
     g.add_edge("pm", "designer")
     g.add_edge("designer", "developer")
     g.add_edge("developer", "qa")

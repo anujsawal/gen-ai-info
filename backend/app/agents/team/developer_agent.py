@@ -65,11 +65,13 @@ async def run_developer_agent(
     blueprint: dict,
     cluster_articles: dict[str, dict],  # {cluster_id: article_data}
     qa_feedback: list[str] | None = None,
+    user_feedback: list[str] | None = None,
 ) -> dict:
     """
     blueprint: output from designer_agent
     cluster_articles: {cluster_id: {title, full_text, source_url, category}}
     qa_feedback: list of issues from a previous QA rejection (for re-runs)
+    user_feedback: curated writing/style feedback from previous newsletter editions
     Returns: newsletter content dict
     """
     llm = _get_llm()
@@ -78,6 +80,13 @@ async def run_developer_agent(
     if qa_feedback:
         feedback_text = f"\n\nQA FEEDBACK TO FIX:\n" + "\n".join(f"- {f}" for f in qa_feedback)
 
+    user_feedback_section = ""
+    if user_feedback:
+        user_feedback_section = (
+            "\n\nUSER FEEDBACK ON WRITING STYLE:\n"
+            + "\n".join(f"- {f}" for f in user_feedback)
+        )
+
     payload = {
         "blueprint": blueprint,
         "source_articles": cluster_articles,
@@ -85,7 +94,7 @@ async def run_developer_agent(
 
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Write the newsletter content for this blueprint and source articles:\n\n{json.dumps(payload, indent=2, default=str)[:12000]}{feedback_text}\n\nOutput the content JSON.")
+        HumanMessage(content=f"Write the newsletter content for this blueprint and source articles:\n\n{json.dumps(payload, indent=2, default=str)[:12000]}{feedback_text}{user_feedback_section}\n\nOutput the content JSON.")
     ]
 
     try:

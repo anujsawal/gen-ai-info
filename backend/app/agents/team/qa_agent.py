@@ -93,10 +93,12 @@ async def run_qa_agent(
     newsletter_content: dict,
     cluster_articles: dict[str, dict],
     faithfulness_threshold: float | None = None,
+    user_feedback: list[str] | None = None,
 ) -> dict:
     """
     newsletter_content: output from developer_agent
     cluster_articles: {cluster_id: {title, full_text, source_url}}
+    user_feedback: curated accuracy/fact-check feedback from previous newsletter editions
     Returns: QA report dict
     """
     llm = _get_llm()
@@ -108,6 +110,13 @@ async def run_qa_agent(
         for cid, art in cluster_articles.items()
     }
 
+    user_feedback_section = ""
+    if user_feedback:
+        user_feedback_section = (
+            "\n\nUSER FEEDBACK ON ACCURACY FROM PREVIOUS EDITIONS:\n"
+            + "\n".join(f"- {f}" for f in user_feedback)
+        )
+
     payload = {
         "newsletter_content": newsletter_content,
         "source_articles": trimmed_sources,
@@ -116,7 +125,7 @@ async def run_qa_agent(
 
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=f"Evaluate this newsletter content:\n\n{json.dumps(payload, indent=2, default=str)[:14000]}\n\nOutput the QA report JSON.")
+        HumanMessage(content=f"Evaluate this newsletter content:\n\n{json.dumps(payload, indent=2, default=str)[:14000]}{user_feedback_section}\n\nOutput the QA report JSON.")
     ]
 
     start = time.time()
