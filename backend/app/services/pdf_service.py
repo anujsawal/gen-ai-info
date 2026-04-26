@@ -60,6 +60,7 @@ TEMPLATE = """
   </div>
 </div>
 
+{% if sections %}
 {% for section in sections %}
 <div class="section">
   <h2>{{ section.section_name }}</h2>
@@ -87,6 +88,14 @@ TEMPLATE = """
   {% endfor %}
 </div>
 {% endfor %}
+{% else %}
+<div class="section">
+  <div style="padding: 30px; text-align: center; color: #888; background: #f8f9fa; border-radius: 6px;">
+    <p style="font-size: 13px; margin: 0 0 8px 0;">Newsletter content could not be generated for this edition.</p>
+    <p style="font-size: 10px; margin: 0;">This may be due to a temporary LLM rate limit. Please generate a new newsletter from the dashboard.</p>
+  </div>
+</div>
+{% endif %}
 
 <div class="section">
   <h2>QA & Governance Report</h2>

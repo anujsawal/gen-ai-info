@@ -45,13 +45,19 @@ async def upload_document(
     content = await file.read()
 
     if file.filename.endswith(".pdf"):
+        import io
         try:
             import pdfplumber
-            import io
             with pdfplumber.open(io.BytesIO(content)) as pdf:
                 text = "\n".join(p.extract_text() or "" for p in pdf.pages)
+            if not text.strip():
+                raise HTTPException(400, "PDF appears to be image-only or has no extractable text")
         except ImportError:
-            text = content.decode("utf-8", errors="ignore")
+            raise HTTPException(500, "pdfplumber not installed — contact admin")
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(400, f"Could not read PDF: {str(e)}")
     else:
         text = content.decode("utf-8", errors="ignore")
 
