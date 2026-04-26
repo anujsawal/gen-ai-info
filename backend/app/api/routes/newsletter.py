@@ -54,15 +54,20 @@ async def generate_newsletter(lookback_days: int = 7, db: AsyncSession = Depends
 
 @router.post("/send/{newsletter_id}")
 async def send_newsletter(newsletter_id: str, db: AsyncSession = Depends(get_db)):
-    """Send an existing newsletter PDF to WhatsApp."""
+    """Send an existing newsletter to WhatsApp with PDF download link."""
     result = await db.execute(select(Newsletter).where(Newsletter.id == newsletter_id))
     nl = result.scalar_one_or_none()
     if not nl:
         raise HTTPException(404, "Newsletter not found")
-    if not nl.pdf_path or not os.path.exists(nl.pdf_path):
-        raise HTTPException(400, "Newsletter PDF not found — generate first")
 
-    send_result = await send_pdf_to_whatsapp(nl.pdf_path)
+    summary_bullets = (nl.content or {}).get("executive_summary", []) if nl.content else []
+
+    send_result = await send_pdf_to_whatsapp(
+        pdf_path=nl.pdf_path or "",
+        caption=nl.title or "Your Gen AI Digest is ready!",
+        newsletter_id=newsletter_id,
+        summary_bullets=summary_bullets,
+    )
     if send_result["success"]:
         from datetime import datetime
         nl.sent_at = datetime.utcnow()
@@ -117,6 +122,15 @@ async def get_newsletter(newsletter_id: str, db: AsyncSession = Depends(get_db))
 async def download_newsletter_pdf(newsletter_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Newsletter).where(Newsletter.id == newsletter_id))
     nl = result.scalar_one_or_none()
-    if not nl or not nl.pdf_path or not os.path.exists(nl.pdf_path):
-        raise HTTPException(404, "PDF not found")
+    if not nl:
+        raise HTTPException(404, "Newsletter not found")
+
+    # Regenerate if file is missing (Railway has ephemeral storage; files are lost on redeploy)
+    if not nl.pdf_path or not os.path.exists(nl.pdf_path):
+        pdf_path = await generate_pdf(newsletter_id, nl.content or {}, nl.qa_report or {})
+        if not pdf_path or not os.path.exists(pdf_path):
+            raise HTTPException(500, "Could not generate PDF")
+        nl.pdf_path = pdf_path
+        await db.commit()
+
     return FileResponse(nl.pdf_path, media_type="application/pdf", filename=os.path.basename(nl.pdf_path))
