@@ -30,6 +30,7 @@ async def whatsapp_webhook(
             result = await newsletter_graph.ainvoke({
                 "db_session": db, "lookback_days": 7,
                 "clusters": [], "cluster_articles": {},
+                "curated_feedback": {},
                 "pm_agenda": {}, "designer_blueprint": {},
                 "newsletter_content": {}, "qa_report": {},
                 "qa_retries": 0, "newsletter_id": "", "errors": [],
